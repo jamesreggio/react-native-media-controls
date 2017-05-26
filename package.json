@@ -1,0 +1,7 @@
+{
+	"name": "react-native-media-controls",
+	"version": "0.1.0",
+	"peerDependencies": {
+		"react-native": ">=0.40.0"
+	}
+}
