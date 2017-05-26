@@ -1,13 +1,7 @@
 import {NativeModules, NativeEventEmitter} from 'react-native';
 
-const {RNMediaControls: NativeControls} = NativeModules;
+const NativeControls = NativeModules.RNMediaControls;
 const NativeEvents = new NativeEventEmitter(NativeControls);
-
-export const STATE_ERROR = 'ERROR';
-export const STATE_LOADING = 'LOADING';
-export const STATE_PLAYING = 'PLAYING';
-export const STATE_PAUSED = 'PAUSED';
-export const STATE_STOPPED = 'STOPPED';
 
 export const resetDetails = () => (
   NativeControls.resetDetails()

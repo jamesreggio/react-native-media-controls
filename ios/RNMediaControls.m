@@ -13,8 +13,6 @@ RCT_EXPORT_MODULE()
 
 #pragma mark Details
 
-#define ARTWORK @"artwork"
-
 #define DETAIL_STRING_KEYS @{ \
   @"album": MPMediaItemPropertyAlbumTitle, \
   @"artist": MPMediaItemPropertyArtist, \
@@ -59,7 +57,7 @@ RCT_EXPORT_METHOD(updateDetails:(NSDictionary *)details
     }
   }
 
-  BOOL updateArtwork = (details[ARTWORK] != nil && ![details[ARTWORK] isEqual:_artwork]);
+  BOOL updateArtwork = (details[@"artwork"] != nil && ![details[@"artwork"] isEqual:_artwork]);
   if (updateArtwork) {
     [nextDetails removeObjectForKey:MPMediaItemPropertyArtwork];
   }
@@ -69,7 +67,7 @@ RCT_EXPORT_METHOD(updateDetails:(NSDictionary *)details
   BOOL updateSuccessful = [nextDetails isEqualToDictionary:updatedDetails];
 
   if (updateArtwork && updateSuccessful) {
-    _artwork = details[ARTWORK];
+    _artwork = details[@"artwork"];
     [self updateArtwork];
   }
 
@@ -165,6 +163,8 @@ RCT_REMAP_METHOD(resetDetails,
     @"skipForward",
     @"skipBackward",
     @"routeChange",
+    @"systemReset",
+    @"interrupt",
   ];
 }
 
@@ -208,6 +208,10 @@ RCT_EXPORT_METHOD(toggleCommand:(NSString *)name
     [self toggleCommandHandler:command enabled:enabled selector:@selector(onSkipBackward:)];
   } else if ([name isEqual: @"routeChange"]) {
     [self toggleNotificationHandler:AVAudioSessionRouteChangeNotification enabled:enabled selector:@selector(onRouteChange:)];
+  } else if ([name isEqual: @"systemReset"]) {
+    [self toggleNotificationHandler:AVAudioSessionMediaServicesWereResetNotification enabled:enabled selector:@selector(onSystemReset:)];
+  } else if ([name isEqual: @"interrupt"]) {
+    [self toggleNotificationHandler:AVAudioSessionInterruptionNotification enabled:enabled selector:@selector(onInterrupt:)];
   }
 }
 
@@ -241,6 +245,42 @@ RCT_EXPORT_METHOD(toggleCommand:(NSString *)name
 - (void)onSeekBackward:(MPRemoteCommandEvent*)event { [self sendEventWithName:@"seekBackward" body:nil]; }
 - (void)onSkipForward:(MPSkipIntervalCommandEvent*)event { [self sendEventWithName:@"skipForward" body:@{@"interval": @(event.interval)}]; }
 - (void)onSkipBackward:(MPSkipIntervalCommandEvent*)event { [self sendEventWithName:@"skipBackward" body:@{@"interval": @(event.interval)}]; }
-- (void)onRouteChange:(NSNotification*)notification { [self sendEventWithName:@"routeChange" body:nil]; }
+
+- (void)onRouteChange:(NSNotification*)notification {
+  NSDictionary *userInfo = notification.userInfo;
+  AVAudioSessionRouteChangeReason reason = [userInfo[AVAudioSessionRouteChangeReasonKey] intValue];
+
+  NSMutableDictionary *body = [NSMutableDictionary dictionary];
+  if (reason == AVAudioSessionRouteChangeReasonNewDeviceAvailable) {
+    body[@"reason"] = @"NEW_DEVICE_AVAILABLE";
+  } else if (reason == AVAudioSessionRouteChangeReasonOldDeviceUnavailable) {
+    body[@"reason"] = @"OLD_DEVICE_UNAVAILABLE";
+  } else {
+    body[@"reason"] = @"UNIMPLEMENTED";
+  }
+
+  [self sendEventWithName:@"routeChange" body:body];
+}
+
+- (void)onSystemReset:(NSNotification*)notification {
+  [self sendEventWithName:@"systemReset" body:nil];
+}
+
+- (void)onInterrupt:(NSNotification*)notification {
+  NSDictionary *userInfo = notification.userInfo;
+  AVAudioSessionInterruptionType type = [userInfo[AVAudioSessionInterruptionTypeKey] intValue];
+
+  NSMutableDictionary *body = [NSMutableDictionary dictionary];
+  if (type == AVAudioSessionInterruptionTypeBegan) {
+    body[@"type"] = @"BEGAN";
+  } else if (type == AVAudioSessionInterruptionTypeEnded) {
+    body[@"type"] = @"ENDED";
+
+    AVAudioSessionInterruptionOptions option = [userInfo[AVAudioSessionInterruptionOptionKey] intValue];
+    body[@"shouldResume"] = @(option == AVAudioSessionInterruptionOptionShouldResume);
+  }
+
+  [self sendEventWithName:@"interrupt" body:body];
+}
 
 @end
