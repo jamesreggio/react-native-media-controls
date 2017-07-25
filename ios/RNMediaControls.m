@@ -273,6 +273,9 @@ RCT_EXPORT_METHOD(toggleCommand:(NSString *)name
   NSMutableDictionary *body = [NSMutableDictionary dictionary];
   if (type == AVAudioSessionInterruptionTypeBegan) {
     body[@"type"] = @"BEGAN";
+
+    BOOL wasSuspended = [userInfo[AVAudioSessionInterruptionWasSuspendedKey] boolValue];
+    body[@"wasSuspended"] = @(wasSuspended);
   } else if (type == AVAudioSessionInterruptionTypeEnded) {
     body[@"type"] = @"ENDED";
 
