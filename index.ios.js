@@ -11,6 +11,14 @@ export const updateDetails = (details) => (
   NativeControls.updateDetails(details)
 );
 
+export const showRoutePicker = () => (
+  NativeControls.showRoutePicker()
+);
+
+export const getOutputRoutes = () => (
+  NativeControls.getOutputRoutes()
+);
+
 export const toggleCommand = (name, enabled, options) => (
   NativeControls.toggleCommand(name, enabled, options)
 );

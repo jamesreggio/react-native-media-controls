@@ -11,6 +11,11 @@
 
 RCT_EXPORT_MODULE()
 
+- (dispatch_queue_t)methodQueue
+{
+  return dispatch_get_main_queue();
+}
+
 #pragma mark Details
 
 #define DETAIL_STRING_KEYS @{ \
@@ -23,11 +28,6 @@ RCT_EXPORT_MODULE()
   @"duration": MPMediaItemPropertyPlaybackDuration, \
   @"position": MPNowPlayingInfoPropertyElapsedPlaybackTime, \
   @"speed": MPNowPlayingInfoPropertyPlaybackRate, \
-}
-
-- (dispatch_queue_t)methodQueue
-{
-  return dispatch_get_main_queue();
 }
 
 RCT_EXPORT_METHOD(updateDetails:(NSDictionary *)details
@@ -75,8 +75,8 @@ RCT_EXPORT_METHOD(updateDetails:(NSDictionary *)details
 }
 
 RCT_REMAP_METHOD(resetDetails,
-                 resolver:(RCTPromiseResolveBlock)resolve
-                 rejecter:(RCTPromiseRejectBlock)reject)
+                 resetDetailsWithResolver:(RCTPromiseResolveBlock)resolve
+                                 rejecter:(RCTPromiseRejectBlock)reject)
 {
   MPNowPlayingInfoCenter *center = [MPNowPlayingInfoCenter defaultCenter];
   center.nowPlayingInfo = nil;
@@ -144,6 +144,75 @@ RCT_REMAP_METHOD(resetDetails,
       });
     }
   });
+}
+
+#pragma mark Route
+
+RCT_EXPORT_METHOD(showRoutePicker)
+{
+  // This is an absurdly hacky way to display the AirPlay selection popover.
+  // https://stackoverflow.com/a/15583062
+
+  UIViewController *presentedController = RCTPresentedViewController();
+  UIView *presentedView = presentedController.view;
+
+  MPVolumeView *volumeView = [[MPVolumeView alloc] initWithFrame:CGRectZero];
+  volumeView.hidden = YES;
+  [presentedView addSubview:volumeView];
+
+  for (UIButton *button in volumeView.subviews) {
+    if ([button isKindOfClass:[UIButton class]]) {
+      [button sendActionsForControlEvents:UIControlEventTouchUpInside];
+      break;
+    }
+  }
+
+  [volumeView removeFromSuperview];
+}
+
+RCT_REMAP_METHOD(getOutputRoutes,
+                 getOutputRoutesWithResolver:(RCTPromiseResolveBlock)resolve
+                                   rejecter:(RCTPromiseRejectBlock)reject)
+{
+  AVAudioSession *session = [AVAudioSession sharedInstance];
+  NSArray<AVAudioSessionPortDescription *> *descriptions = session.currentRoute.outputs;
+  NSMutableArray<NSDictionary *> *routes = [[NSMutableArray alloc] initWithCapacity:descriptions.count];
+  for (NSUInteger i = 0; i < descriptions.count; i++) {
+    AVAudioSessionPortDescription *description = descriptions[i];
+    NSMutableDictionary *route = [NSMutableDictionary dictionary];
+    route[@"name"] = description.portName;
+
+    NSString *portType = description.portType;
+    if ([portType isEqualToString:AVAudioSessionPortLineOut]) {
+      route[@"type"] = @"LINE_OUT";
+    } else if ([portType isEqualToString:AVAudioSessionPortHeadphones]) {
+      route[@"type"] = @"HEADPHONES";
+    } else if ([portType isEqualToString:AVAudioSessionPortBuiltInReceiver]) {
+      route[@"type"] = @"BUILTIN_RECEIVER";
+    } else if ([portType isEqualToString:AVAudioSessionPortBuiltInSpeaker]) {
+      route[@"type"] = @"BUILTIN_SPEAKER";
+    } else if ([portType isEqualToString:AVAudioSessionPortHDMI]) {
+      route[@"type"] = @"HDMI";
+    } else if ([portType isEqualToString:AVAudioSessionPortAirPlay]) {
+      route[@"type"] = @"AIRPLAY";
+    } else if ([portType isEqualToString:AVAudioSessionPortBluetoothLE]) {
+      route[@"type"] = @"BLUETOOTH_LE";
+    } else if ([portType isEqualToString:AVAudioSessionPortBluetoothA2DP]) {
+      route[@"type"] = @"BLUETOOTH_A2DP";
+    } else if ([portType isEqualToString:AVAudioSessionPortBluetoothHFP]) {
+      route[@"type"] = @"BLUETOOTH_HFP";
+    } else if ([portType isEqualToString:AVAudioSessionPortUSBAudio]) {
+      route[@"type"] = @"USB";
+    } else if ([portType isEqualToString:AVAudioSessionPortCarAudio]) {
+      route[@"type"] = @"CARPLAY";
+    } else {
+      route[@"type"] = @"UNKNOWN";
+    }
+
+    routes[i] = route;
+  }
+
+  resolve(routes);
 }
 
 #pragma mark Events
@@ -248,9 +317,9 @@ RCT_EXPORT_METHOD(toggleCommand:(NSString *)name
 
 - (void)onRouteChange:(NSNotification*)notification {
   NSDictionary *userInfo = notification.userInfo;
-  AVAudioSessionRouteChangeReason reason = [userInfo[AVAudioSessionRouteChangeReasonKey] intValue];
-
   NSMutableDictionary *body = [NSMutableDictionary dictionary];
+
+  AVAudioSessionRouteChangeReason reason = [userInfo[AVAudioSessionRouteChangeReasonKey] intValue];
   if (reason == AVAudioSessionRouteChangeReasonNewDeviceAvailable) {
     body[@"reason"] = @"NEW_DEVICE_AVAILABLE";
   } else if (reason == AVAudioSessionRouteChangeReasonOldDeviceUnavailable) {
