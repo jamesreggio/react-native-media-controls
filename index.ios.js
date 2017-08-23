@@ -23,7 +23,10 @@ export const toggleCommand = (name, enabled, options) => (
   NativeControls.toggleCommand(name, enabled, options)
 );
 
-export const on = (name, callback) => {
-  const subscription = NativeEvents.addListener(name, callback);
-  return () => NativeEvents.removeListener(subscription);
-};
+export const addListener = (name, callback) => (
+  NativeEvents.addListener(name, callback)
+);
+
+export const removeListener = (subscription) => (
+  NativeEvents.removeListener(subscription)
+);

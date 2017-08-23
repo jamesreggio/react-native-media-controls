@@ -16,7 +16,7 @@ RCT_EXPORT_MODULE()
   return dispatch_get_main_queue();
 }
 
-#pragma mark Details
+#pragma mark - Details
 
 #define DETAIL_STRING_KEYS @{ \
   @"album": MPMediaItemPropertyAlbumTitle, \
@@ -146,7 +146,7 @@ RCT_REMAP_METHOD(resetDetails,
   });
 }
 
-#pragma mark Route
+#pragma mark - Route
 
 RCT_EXPORT_METHOD(showRoutePicker)
 {
@@ -215,7 +215,7 @@ RCT_REMAP_METHOD(getOutputRoutes,
   resolve(routes);
 }
 
-#pragma mark Events
+#pragma mark - Events
 
 - (NSArray<NSString *> *)supportedEvents
 {

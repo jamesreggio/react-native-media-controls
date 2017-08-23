@@ -3,4 +3,5 @@ export const updateDetails = () => {};
 export const showRoutePicker = () => {};
 export const getOutputRoutes = () => [];
 export const toggleCommand = () => {};
-export const on = () => {};
+export const addListener = () => {};
+export const removeListener = () => {};
