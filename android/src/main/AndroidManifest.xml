@@ -1,0 +1,13 @@
+<manifest
+  xmlns:android="http://schemas.android.com/apk/res/android"
+  package="com.jamesreggio.react.media">
+
+  <application>
+
+    <service
+      android:stopWithTask="false"
+      android:name=".MediaControlsWatchdogService" />
+
+  </application>
+
+</manifest>

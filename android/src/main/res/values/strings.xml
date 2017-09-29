@@ -1,0 +1,10 @@
+<resources>
+  <string name="media_controls_play">Play</string>
+  <string name="media_controls_pause">Pause</string>
+  <string name="media_controls_toggle">Toggle</string>
+  <string name="media_controls_stop">Stop</string>
+  <string name="media_controls_next_track">Next Track</string>
+  <string name="media_controls_previous_track">Previous Track</string>
+  <string name="media_controls_skip_forward">Skip Forward</string>
+  <string name="media_controls_skip_backward">Skip Backward</string>
+</resources>
