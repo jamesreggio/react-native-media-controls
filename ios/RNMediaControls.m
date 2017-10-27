@@ -4,6 +4,8 @@
 @import AVFoundation;
 @import MediaPlayer;
 
+#define nilNull(value) ((value) == [NSNull null] ? nil : (value))
+
 @implementation RNMediaControls
 {
   NSString *_artwork;
@@ -44,20 +46,21 @@ RCT_EXPORT_METHOD(updateDetails:(NSDictionary *)details
   }
 
   for (NSString *key in DETAIL_STRING_KEYS) {
-    if (details[key] != nil) {
+    if (nilNull(details[key])) {
       NSObject *value = [RCTConvert NSString:details[key]];
       [nextDetails setValue:value forKey:DETAIL_STRING_KEYS[key]];
     }
   }
 
   for (NSString *key in DETAIL_NUMBER_KEYS) {
-    if (details[key] != nil) {
+    if (nilNull(details[key])) {
       NSObject *value = [RCTConvert NSNumber:details[key]];
       [nextDetails setValue:value forKey:DETAIL_NUMBER_KEYS[key]];
     }
   }
 
-  BOOL updateArtwork = (details[@"artwork"] != nil && ![details[@"artwork"] isEqual:_artwork]);
+  NSString *artwork = nilNull(details[@"artwork"]);
+  BOOL updateArtwork = (artwork && ![artwork isEqual:_artwork]);
   if (updateArtwork) {
     [nextDetails removeObjectForKey:MPMediaItemPropertyArtwork];
   }
@@ -67,7 +70,7 @@ RCT_EXPORT_METHOD(updateDetails:(NSDictionary *)details
   BOOL updateSuccessful = [nextDetails isEqualToDictionary:updatedDetails];
 
   if (updateArtwork && updateSuccessful) {
-    _artwork = details[@"artwork"];
+    _artwork = artwork;
     [self updateArtwork];
   }
 
@@ -263,15 +266,15 @@ RCT_EXPORT_METHOD(toggleCommand:(NSString *)name
     [self toggleCommandHandler:commandCenter.seekBackwardCommand enabled:enabled selector:@selector(onSeekBackward:)];
   } else if ([name isEqual:@"skipForward"]) {
     MPSkipIntervalCommand *command = commandCenter.skipForwardCommand;
-    if (options[@"interval"]) {
-      NSNumber *interval = [RCTConvert NSNumber:options[@"interval"]];
+    NSNumber *interval = nilNull(options[@"interval"]);
+    if (interval) {
       command.preferredIntervals = @[interval];
     }
     [self toggleCommandHandler:command enabled:enabled selector:@selector(onSkipForward:)];
   } else if ([name isEqual:@"skipBackward"]) {
     MPSkipIntervalCommand *command = commandCenter.skipBackwardCommand;
-    if (options[@"interval"]) {
-      NSNumber *interval = [RCTConvert NSNumber:options[@"interval"]];
+    NSNumber *interval = nilNull(options[@"interval"]);
+    if (interval) {
       command.preferredIntervals = @[interval];
     }
     [self toggleCommandHandler:command enabled:enabled selector:@selector(onSkipBackward:)];
