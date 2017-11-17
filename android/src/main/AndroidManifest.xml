@@ -2,11 +2,17 @@
   xmlns:android="http://schemas.android.com/apk/res/android"
   package="com.jamesreggio.react.media.controls">
 
+  <uses-permission android:name="android.permission.WAKE_LOCK" />
+
   <application>
 
     <service
       android:stopWithTask="false"
-      android:name=".MediaControlsWatchdogService" />
+      android:name="com.jamesreggio.react.media.MediaControlsWatchdogService" />
+
+    <service
+      android:stopWithTask="true"
+      android:name="com.jamesreggio.react.media.MediaControlsUpdateService" />
 
   </application>
 
