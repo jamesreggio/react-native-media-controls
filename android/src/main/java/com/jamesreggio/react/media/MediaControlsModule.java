@@ -1,4 +1,3 @@
-//XXX test/support headphone volume
 //XXX define interface for managers
 //XXX define interface for destroyability
 //XXX initialize lazily and jettison on low memory
@@ -35,12 +34,14 @@ import javax.annotation.Nullable;
 public class MediaControlsModule extends ReactContextBaseJavaModule {
 
   private final ReactApplicationContext context;
-  private final MediaSessionCompat session;
-  private final MediaControlsReceiver receiver;
-  private final MediaControlsFocusManager focusManager;
-  private final MediaControlsNotificationManager notificationManager;
-  private final MediaControlsPlaybackStateManager playbackStateManager;
-  private final MediaControlsMediaMetadataManager mediaMetadataManager;
+
+  private boolean initialized = false;
+  private MediaSessionCompat session;
+  private MediaControlsReceiver receiver;
+  private MediaControlsFocusManager focusManager;
+  private MediaControlsNotificationManager notificationManager;
+  private MediaControlsPlaybackStateManager playbackStateManager;
+  private MediaControlsMediaMetadataManager mediaMetadataManager;
 
   private String artwork;
   private Thread artworkThread;
@@ -54,15 +55,7 @@ public class MediaControlsModule extends ReactContextBaseJavaModule {
     super(context);
     this.context = context;
 
-    // Initialize session.
-    // Session configuration must occur on the main thread.
-
-    final MediaSessionCompat session = this.session = new MediaSessionCompat(
-      context,
-      "MediaControlsModule",
-      new ComponentName(context, MediaControlsReceiver.class),
-      null
-    );
+    // Initialization must occur on the main thread.
 
     final MediaControlsModule module = this;
     final Handler mainHandler = new Handler(context.getMainLooper());
@@ -70,15 +63,31 @@ public class MediaControlsModule extends ReactContextBaseJavaModule {
     mainHandler.post(new Runnable() {
       @Override
       public void run() {
-        session.setFlags(
-          MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS |
-          MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS
-        );
-
-        session.setCallback(new MediaControlsListener(context, module));
-        session.setPlaybackToLocal(AudioManager.STREAM_MUSIC);
+        module.init();
       }
     });
+  }
+
+  private void init() {
+    final MediaControlsModule module = this;
+    final ReactApplicationContext context = this.context;
+
+    // Initialize session.
+
+    this.session = new MediaSessionCompat(
+      context,
+      "MediaControlsModule",
+      new ComponentName(context, MediaControlsReceiver.class),
+      null
+    );
+
+    this.session.setFlags(
+      MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS |
+      MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS
+    );
+
+    this.session.setCallback(new MediaControlsListener(context, module));
+    this.session.setPlaybackToLocal(AudioManager.STREAM_MUSIC);
 
     // Initialize managers.
 
@@ -119,9 +128,16 @@ public class MediaControlsModule extends ReactContextBaseJavaModule {
         module.destroy();
       }
     });
+
+    this.initialized = true;
   }
 
   public void destroy() {
+    if (!this.initialized) {
+      return;
+    }
+
+    this.initialized = false;
     this.interruptArtwork();
     this.context.unregisterReceiver(this.receiver);
     this.focusManager.destroy();
@@ -147,6 +163,11 @@ public class MediaControlsModule extends ReactContextBaseJavaModule {
     final ReadableMap options,
     final Promise promise
   ) {
+    if (!this.initialized) {
+      promise.resolve(false);
+      return;
+    }
+
     try {
       this.focusManager.toggleAction(name, enabled, options);
       this.notificationManager.toggleAction(name, enabled, options);
@@ -161,6 +182,11 @@ public class MediaControlsModule extends ReactContextBaseJavaModule {
 
   @ReactMethod
   public void resetDetails(final Promise promise) {
+    if (!this.initialized) {
+      promise.resolve(false);
+      return;
+    }
+
     try {
       this.interruptArtwork();
       this.artwork = null;
@@ -181,6 +207,11 @@ public class MediaControlsModule extends ReactContextBaseJavaModule {
 
   @ReactMethod
   public void updateDetails(final ReadableMap details, final Promise promise) {
+    if (!this.initialized) {
+      promise.resolve(false);
+      return;
+    }
+
     try {
       this.interruptArtwork();
 
