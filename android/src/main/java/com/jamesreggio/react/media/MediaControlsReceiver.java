@@ -19,6 +19,8 @@ public class MediaControlsReceiver extends BroadcastReceiver {
   private final ReactApplicationContext context;
   private final MediaControlsModule module;
 
+  private BroadcastReceiver.PendingResult pendingResult;
+
   MediaControlsReceiver(
     final ReactApplicationContext context,
     final MediaControlsModule module
@@ -43,9 +45,22 @@ public class MediaControlsReceiver extends BroadcastReceiver {
     return this.context.getLifecycleState() == LifecycleState.RESUMED;
   }
 
+  public void didUpdateDetails() {
+    if (this.pendingResult != null) {
+      this.pendingResult.finish();
+      this.pendingResult = null;
+    }
+  }
+
   @Override
   public void onReceive(final Context context, final Intent intent) {
     if (!this.isThisPackage(intent)) {
+      return;
+    }
+
+    final String action = intent.getAction();
+
+    if (action == null) {
       return;
     }
 
@@ -55,11 +70,11 @@ public class MediaControlsReceiver extends BroadcastReceiver {
       HeadlessJsTaskService.acquireWakeLockNow(context);
     }
 
-    final String action = intent.getAction();
-
-    if (action == null) {
-      return;
+    if (this.pendingResult != null) {
+      this.pendingResult.finish();
     }
+
+    this.pendingResult = this.goAsync();
 
     switch (action) {
       case MediaControlsNotificationManager.ACTION_DISMISS_NOTIFICATION: {

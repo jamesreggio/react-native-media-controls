@@ -220,6 +220,7 @@ public class MediaControlsModule extends ReactContextBaseJavaModule {
       this.mediaMetadataManager.updateDetails(this.details);
       this.playbackStateManager.updateDetails(this.details);
       this.notificationManager.updateDetails(this.details);
+      this.receiver.didUpdateDetails();
       this.session.setActive(true);
 
       final Activity activity = this.context.getCurrentActivity();

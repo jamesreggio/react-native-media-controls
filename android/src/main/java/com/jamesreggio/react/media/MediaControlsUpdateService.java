@@ -7,7 +7,7 @@ import com.facebook.react.jstasks.HeadlessJsTaskConfig;
 
 public class MediaControlsUpdateService extends HeadlessJsTaskService {
 
-  private static final int SERVICE_TIMEOUT = 5000;
+  private static final int SERVICE_TIMEOUT = 10000;
 
   @Override
   protected HeadlessJsTaskConfig getTaskConfig(final Intent intent) {
