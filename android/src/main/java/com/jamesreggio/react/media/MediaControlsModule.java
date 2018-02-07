@@ -213,8 +213,6 @@ public class MediaControlsModule extends ReactContextBaseJavaModule {
     }
 
     try {
-      this.interruptArtwork();
-
       this.details.update(details);
       this.focusManager.updateDetails(this.details);
       this.mediaMetadataManager.updateDetails(this.details);
@@ -288,6 +286,7 @@ public class MediaControlsModule extends ReactContextBaseJavaModule {
     final MediaControlsModule module = this;
     final String artwork = this.artwork;
 
+    this.interruptArtwork();
     this.artworkThread = new Thread(new Runnable() {
       @Override
       public void run() {
